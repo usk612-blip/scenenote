@@ -23,7 +23,9 @@ export type SceneResult = {
 };
 
 // "S#3.", "#3", "SC.3", "SC 3", "씬3", "씬 3", "Scene 3" 로 시작하는 줄
-const HEADER = /^\s*(?:S\s*#|#|SC\.?\s*|씬\s*|scene\s*)(\d+\s?[A-Za-z]?)\s*[.\-:)\]]?\s*(.*)$/i;
+// 씬 번호는 숫자 + (바로 붙은) 영문 한 글자까지만이다. (예: 3, 12A)
+// 번호 뒤에 띄어쓰기를 두고 오는 글자(예: "S#3 N 골목"의 N)는 번호가 아니다.
+const HEADER = /^\s*(?:S\s*#|#|SC\.?\s*|씬\s*|scene\s*)(\d+(?:[A-Za-z](?![A-Za-z]))?)\s*[.\-:)\]]?\s*(.*)$/i;
 
 const DAY_WORDS = ["낮", "아침", "오전", "오후", "점심", "한낮", "DAY"];
 const NIGHT_WORDS = ["밤", "저녁", "새벽", "심야", "야간", "NIGHT"];
@@ -55,7 +57,11 @@ function hasWord(text: string, words: string[]): boolean {
 
 function findTime(text: string): TimeOfDay {
   // 한 줄에 낮/밤이 모두 있으면(예: "낮→밤") 어느 쪽인지 추측하지 않는다.
-  const stripped = text.replace(/D\s*[+\-]\s*\d+/gi, " ");
+  // 날짜 표시(D+1, Day 2, 2일차 등)는 낮/밤 판정에서 먼저 뺀다. ("Day 2"의 Day를 낮으로 읽지 않기 위해)
+  let stripped = text;
+  for (const pattern of DATE_PATTERNS) {
+    stripped = stripped.replace(new RegExp(pattern.source, pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`), " ");
+  }
   const day = hasWord(stripped, DAY_WORDS) || new RegExp(`(^|${SEP})D($|${SEP})`).test(stripped);
   const night = hasWord(stripped, NIGHT_WORDS) || new RegExp(`(^|${SEP})N($|${SEP})`).test(stripped);
   if (day && !night) return "낮";
