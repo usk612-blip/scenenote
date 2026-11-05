@@ -21,14 +21,27 @@ type Result = {
 
 type Filter = "전체" | "낮" | "밤" | "불명";
 
+// 파일 크기를 사람이 읽기 쉬운 글자로 바꾼다. (예: 340KB, 2.1MB)
+function formatSize(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))}KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
+}
+
 // 대본과 결과는 이 화면의 메모리에만 있다. 브라우저 저장소에는 쓰지 않는다.
 export function SceneTool() {
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [fileKey, setFileKey] = useState(0); // 파일 선택칸을 비우기 위한 값 (바꾸면 칸이 새로 만들어진다)
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [filter, setFilter] = useState<Filter>("전체");
+
+  // 고른 파일을 지워서 붙여넣기 칸을 다시 쓸 수 있게 한다.
+  function clearFile() {
+    setFile(null);
+    setFileKey((k) => k + 1);
+  }
 
   function buildBody() {
     const body = new FormData();
@@ -82,12 +95,27 @@ export function SceneTool() {
             파일 올리기 (.txt, .docx, .pdf · 5MB 이하)
           </label>
           <input
+            key={fileKey}
             id="file"
             type="file"
             accept=".txt,.docx,.pdf"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             className="mt-1 block w-full text-sm text-zinc-700 dark:text-zinc-300"
           />
+          {file && (
+            <p className="mt-2 flex flex-wrap items-center gap-3 text-sm text-zinc-700 dark:text-zinc-300">
+              <span>
+                선택한 파일: <strong>{file.name}</strong> ({formatSize(file.size)})
+              </span>
+              <button
+                type="button"
+                onClick={clearFile}
+                className="rounded-md border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+              >
+                파일 지우기
+              </button>
+            </p>
+          )}
         </div>
         <div>
           <label htmlFor="text" className="block text-sm font-medium text-zinc-800 dark:text-zinc-200">
@@ -99,7 +127,7 @@ export function SceneTool() {
             value={text}
             disabled={file !== null}
             onChange={(e) => setText(e.target.value)}
-            placeholder={file ? "파일을 올렸습니다. 붙여넣기를 쓰려면 파일을 지워 주세요." : ""}
+            placeholder={file ? "파일을 골랐습니다. 붙여넣기를 쓰려면 위의 '파일 지우기'를 눌러 주세요." : ""}
             className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-black outline-none focus:border-zinc-900 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
           />
         </div>
