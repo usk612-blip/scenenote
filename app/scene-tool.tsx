@@ -63,7 +63,7 @@ export function SceneTool() {
   return (
     <div className="mx-auto w-full max-w-4xl px-6 py-10">
       <header>
-        <h1 className="text-3xl font-semibold text-black dark:text-zinc-50">씬노트</h1>
+        <h1 className="text-5xl font-bold text-black dark:text-zinc-50">씬노트</h1>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
           대본의 씬 머리글(예: <code>S#3. 카페 / 낮</code>)을 읽어 낮/밤별로 정리합니다.
           대본은 저장되지 않고, 외부 AI 서비스로 보내지 않습니다. 이 화면을 닫으면 사라집니다.
