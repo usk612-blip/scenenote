@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server";
 import { ExtractError } from "@/lib/extract";
-import { isAuthorized, readScript } from "@/lib/request";
+import { readScript } from "@/lib/request";
 import { analyzeScenes } from "@/lib/scenes";
 
 // 대본은 이 요청을 처리하는 동안만 메모리에 있고, 저장하거나 로그에 남기지 않는다.
 // 여기서는 대본 내용이나 파일 이름을 console 에 절대 출력하지 않는다.
 
 export async function POST(request: Request) {
-  if (!isAuthorized(request)) {
-    return NextResponse.json({ error: "접근 암호가 필요합니다." }, { status: 401 });
-  }
-
   let script: string;
   let fromPdf: boolean;
   try {

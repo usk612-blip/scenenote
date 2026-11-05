@@ -9,16 +9,12 @@ import {
   validate,
 } from "@/lib/characters";
 import { ExtractError } from "@/lib/extract";
-import { isAuthorized, readScript } from "@/lib/request";
+import { readScript } from "@/lib/request";
 
 // 이 API는 대본을 외부 AI 서비스로 보낸다. 그래서 화면에서 사용자가 동의했을 때만 호출된다.
 // 대본·AI 답변은 저장하지 않고 console 에도 출력하지 않는다.
 
 export async function POST(request: Request) {
-  if (!isAuthorized(request)) {
-    return NextResponse.json({ error: "접근 암호가 필요합니다." }, { status: 401 });
-  }
-
   let script: string;
   let consent: boolean;
   try {

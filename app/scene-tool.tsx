@@ -60,10 +60,6 @@ export function SceneTool() {
       const response = await fetch("/api/scenes", { method: "POST", body: buildBody() });
       const data = await response.json();
       if (!response.ok) {
-        if (response.status === 401) {
-          window.location.reload(); // 접근 시간이 끝났으면 암호 화면으로 돌아간다.
-          return;
-        }
         setError(data.error ?? "분석하지 못했습니다.");
         return;
       }
