@@ -2,12 +2,15 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 // 공유 접근 암호 방식의 핵심 로직.
 // 필요한 환경 변수 (.env 또는 Vercel 환경 변수에만 둔다):
-//   ACCESS_CODE    : 연출부가 입력하는 공유 접근 암호
-//   SESSION_SECRET : 쿠키 서명용 비밀 문자열 (길고 무작위로, 접근 암호와 다르게)
-// 둘 중 하나라도 없으면 아무도 들어갈 수 없다. (안전한 쪽으로 닫힘)
+//   ACCESS_CODE    : 연출부가 입력하는 공유 접근 암호 (16자 이상, 길고 무작위로)
+//   SESSION_SECRET : 쿠키 서명용 비밀 문자열 (32자 이상, 길고 무작위로, 접근 암호와 다르게)
+// 둘 중 하나라도 없거나, 너무 짧거나, 서로 같으면 아무도 들어갈 수 없다. (안전한 쪽으로 닫힘)
+// 틀린 횟수 제한은 서버 메모리에만 있어 완전한 방어가 아니므로, 암호가 길고 무작위인 것이 가장 중요하다.
 
 export const ACCESS_COOKIE = "scenenote_access";
 export const SESSION_SECONDS = 60 * 60 * 12; // 12시간
+export const MIN_ACCESS_CODE_LENGTH = 16;
+export const MIN_SESSION_SECRET_LENGTH = 32;
 
 function sign(value: string, secret: string): string {
   return createHmac("sha256", secret).update(value).digest("hex");
@@ -19,26 +22,34 @@ function safeEqual(a: string, b: string): boolean {
   return timingSafeEqual(ha, hb);
 }
 
+// 설정이 안전한 값인지 본다. 값 자체는 어디에도 출력하지 않는다.
 export function isConfigured(): boolean {
-  return Boolean(process.env.ACCESS_CODE && process.env.SESSION_SECRET);
+  const code = process.env.ACCESS_CODE;
+  const secret = process.env.SESSION_SECRET;
+  if (!code || !secret) return false;
+  if (code.length < MIN_ACCESS_CODE_LENGTH) return false;
+  if (secret.length < MIN_SESSION_SECRET_LENGTH) return false;
+  if (code === secret) return false; // 같은 값을 두 용도로 쓰지 않는다
+  return true;
 }
 
 export function checkAccessCode(input: string): boolean {
-  const code = process.env.ACCESS_CODE;
-  if (!code) return false;
+  if (!isConfigured()) return false;
+  const code = process.env.ACCESS_CODE as string;
   return safeEqual(input, code);
 }
 
 export function createSessionToken(): string {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret) throw new Error("SESSION_SECRET is not set");
+  if (!isConfigured()) throw new Error("access settings are not valid");
+  const secret = process.env.SESSION_SECRET as string;
   const expires = String(Date.now() + SESSION_SECONDS * 1000);
   return `${expires}.${sign(expires, secret)}`;
 }
 
 export function verifySessionToken(token: string | undefined): boolean {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret || !token) return false;
+  if (!isConfigured()) return false;
+  const secret = process.env.SESSION_SECRET as string;
+  if (!token) return false;
   const [expires, signature] = token.split(".");
   if (!expires || !signature) return false;
   if (!safeEqual(signature, sign(expires, secret))) return false;
