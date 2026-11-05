@@ -50,7 +50,15 @@ export async function POST(request: Request) {
 
   try {
     const answer = await askClaude(SYSTEM_PROMPT, buildUserMessage(script, speakers));
-    const result = validate(parseAiJson(answer), script, speakers);
+    // AI 답을 읽을 수 없으면 "정보 부족"으로 채운 정상 결과처럼 내보내지 않고 오류로 알린다.
+    const parsed = parseAiJson(answer);
+    if (!parsed || !Array.isArray((parsed as { characters?: unknown }).characters)) {
+      return NextResponse.json(
+        { error: "AI 답을 읽지 못해 인물 설명을 만들지 못했습니다. 다시 시도해 주세요." },
+        { status: 502 },
+      );
+    }
+    const result = validate(parsed, script, speakers);
     return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (error instanceof AiError) {

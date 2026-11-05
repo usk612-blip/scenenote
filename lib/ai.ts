@@ -55,6 +55,20 @@ export async function askClaude(system: string, user: string): Promise<string> {
     );
   }
 
-  const data = (await response.json()) as { content?: { type: string; text?: string }[] };
+  let data: { content?: { type: string; text?: string }[]; stop_reason?: string };
+  try {
+    data = await response.json();
+  } catch {
+    throw new AiError("AI 서비스의 답을 읽지 못했습니다. 다시 시도해 주세요.", 502);
+  }
+
+  // 답이 최대 길이에서 잘렸으면 끝까지 받지 못한 것이므로 정상 결과처럼 쓰지 않는다.
+  if (data.stop_reason === "max_tokens") {
+    throw new AiError(
+      "AI 답이 너무 길어서 끝까지 받지 못했습니다. 인물이 많은 대본은 나눠서 올려 주세요.",
+      502,
+    );
+  }
+
   return (data.content ?? []).filter((c) => c.type === "text").map((c) => c.text ?? "").join("");
 }
