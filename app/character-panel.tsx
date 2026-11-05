@@ -81,10 +81,6 @@ export function CharacterPanel({ buildBody, disabled }: { buildBody: () => FormD
       });
       const data = await response.json();
       if (!response.ok) {
-        if (response.status === 401) {
-          window.location.reload();
-          return;
-        }
         setError(data.error ?? "인물을 정리하지 못했습니다.");
         return;
       }
