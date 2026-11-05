@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CharacterPanel } from "./character-panel";
 
 type Scene = {
   number: string;
@@ -29,6 +30,13 @@ export function SceneTool() {
   const [busy, setBusy] = useState(false);
   const [filter, setFilter] = useState<Filter>("전체");
 
+  function buildBody() {
+    const body = new FormData();
+    if (file) body.append("file", file);
+    else body.append("text", text);
+    return body;
+  }
+
   async function run(event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
@@ -36,10 +44,7 @@ export function SceneTool() {
     setResult(null);
     setFilter("전체");
     try {
-      const body = new FormData();
-      if (file) body.append("file", file);
-      else body.append("text", text);
-      const response = await fetch("/api/scenes", { method: "POST", body });
+      const response = await fetch("/api/scenes", { method: "POST", body: buildBody() });
       const data = await response.json();
       if (!response.ok) {
         if (response.status === 401) {
@@ -66,7 +71,8 @@ export function SceneTool() {
         <h1 className="text-5xl font-bold text-black dark:text-zinc-50">씬노트</h1>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
           대본의 씬 머리글(예: <code>S#3. 카페 / 낮</code>)을 읽어 낮/밤별로 정리합니다.
-          대본은 저장되지 않고, 외부 AI 서비스로 보내지 않습니다. 이 화면을 닫으면 사라집니다.
+          대본은 저장되지 않고 이 화면을 닫으면 사라집니다. 씬 정리는 외부로 보내지 않지만, 아래 인물 정리는
+          동의했을 때만 대본을 외부 AI 서비스로 보냅니다.
         </p>
       </header>
 
@@ -194,6 +200,8 @@ export function SceneTool() {
           )}
         </section>
       )}
+
+      <CharacterPanel buildBody={buildBody} disabled={file === null && text.trim().length === 0} />
     </div>
   );
 }
