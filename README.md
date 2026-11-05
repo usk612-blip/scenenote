@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 씬노트 (SceneNote)
 
-## Getting Started
+시나리오(대본)를 넣으면 **날짜·낮/밤별 씬 정리**와 **인물관계도·인물 성격 요약**을 만들어 주는 웹 앱입니다.
+영화·드라마 연출부가 개봉 전 대본을 읽으며 손으로 하던 정리 작업을 줄이는 것이 목적입니다.
 
-First, run the development server:
+> 이 프로젝트는 기획서([PRD.md](PRD.md)) → 계획서([PLAN.md](PLAN.md)) → 설계서([DESIGN.md](DESIGN.md)) → 구현 → 점검([CHECK.md](CHECK.md)) 순서로 만들었습니다.
+
+## 무엇을 하나요
+
+| 기능 | 설명 | 상태 |
+|------|------|------|
+| 씬 정리 | 대본의 씬 머리글(예: `S#3. 카페 / 낮`)을 읽어 씬 번호·장소·낮/밤·날짜를 표로 정리합니다. 낮/밤을 알 수 없으면 추측하지 않고 "불명"으로 표시하고, 씬마다 근거가 된 머리글과 줄 번호를 보여 줍니다. | 구현됨 |
+| 인물관계도·성격 요약 | 대사 줄에서 인물과 대사 줄 수를 찾고(프로그램), 관계와 성격 설명(AI)을 한 줄과 근거 씬 번호로 보여 줍니다. 대본에 없는 인물·씬 번호는 걸러 내고, 근거가 없으면 "정보 부족"으로 표시합니다. | 구현됨 (AI 키 필요) |
+| 대본 입력 | 붙여넣기, `.txt`(UTF-8·EUC-KR), `.docx`, 글자가 들어 있는 PDF | 구현됨 |
+| 직접 수정 · 엑셀 내려받기 · 줄거리 요약 | 있으면 좋은 기능(nice) | 아직 없음 |
+
+## 이렇게 만들었어요
+
+- **Next.js 16 (App Router) + TypeScript + Tailwind CSS**, [Vercel](https://vercel.com)에 배포할 수 있게 구성
+- 씬 정리는 AI를 쓰지 않는 **규칙 기반**이라 대본이 외부로 나가지 않습니다.
+- 인물 설명은 사용자가 화면에서 **동의했을 때만** 외부 AI 서비스로 대본을 보냅니다. 보내기 전에 전화번호·이메일 모양의 글자를 지우는 기능은 아직 반영 전입니다.
+- 대본과 결과를 **서버·로그·브라우저 저장소에 저장하지 않습니다.** 화면을 닫으면 사라집니다.
+- 접근은 **공유 접근 암호 하나**로 막습니다(계정 로그인 없음). 암호를 모르면 화면과 API 모두 접근할 수 없습니다.
+
+## 직접 실행해 보기
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+브라우저에서 `http://localhost:3000`을 열면 접근 암호 화면이 나옵니다. 아래 환경 변수를 `.env`에 넣어야 들어갈 수 있습니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| 환경 변수 | 용도 | 비고 |
+|-----------|------|------|
+| `ACCESS_CODE` | 공유 접근 암호 | **16자 이상**. 없거나 짧으면 아무도 들어갈 수 없습니다. |
+| `SESSION_SECRET` | 로그인 쿠키 서명 | **32자 이상**, 접근 암호와 다른 값 |
+| `ANTHROPIC_API_KEY` | 인물 설명용 AI 서비스 키 | 없으면 인물 정리만 쓸 수 없습니다(씬 정리는 가능). |
+| `ANTHROPIC_MODEL` | AI 모델 이름 | 선택(기본값 있음) |
+| `ANTHROPIC_BASE_URL` | 시험용 AI 주소 | 선택. 공식 주소·localhost만 허용. **배포 환경에는 설정하지 마세요.** |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+값은 이 저장소에 없습니다. `.env`는 `.gitignore`로 막혀 있어 올라가지 않습니다.
 
-## Learn More
+```bash
+npm run lint    # 코드 점검
+npm run build   # 배포용 빌드
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 현재 상태와 한계
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- 점검 결과는 [CHECK.md](CHECK.md)에 정리되어 있으며, 판정은 **실패**입니다. 성공 기준 일부가 측정 전이고, AI 서비스가 아직 정해지지 않았습니다.
+- 인물 정리는 가짜 AI 서버와 가상 대본으로만 시험했고, **실제 AI 서비스로는 시험하지 못했습니다.**
+- 실제 개봉 전 대본을 넣기 전에 사용하는 AI 서비스의 약관(입력 내용 학습 여부, 보관 기간)을 직접 확인해야 합니다.
+- Vercel은 4.5MB를 넘는 요청을 서버에 닿기 전에 막습니다. 큰 파일은 4MB 이하로 올려 주세요.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 문서
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| 문서 | 내용 |
+|------|------|
+| [PRD.md](PRD.md) | 기획서: 누가 왜 쓰는지, 핵심 기능, 범위, 보안·개인정보 검토 |
+| [PLAN.md](PLAN.md) | 계획서: 이번 사이클 목표·성공 기준과 작업 순서 |
+| [DESIGN.md](DESIGN.md) | 설계서: 화면 구성, 데이터 흐름, 기술 선택 |
+| [CHECK.md](CHECK.md) | 점검 결과: 성공 기준 판정, 설계와 코드의 차이, 보안 점검 |
+| [CLAUDE.md](CLAUDE.md) | 개발 작업 규칙 |
