@@ -18,7 +18,10 @@ function clientIp(request: Request): string {
 export async function POST(request: Request) {
   if (!isConfigured()) {
     return NextResponse.json(
-      { error: "서버에 접근 암호가 설정되지 않았습니다." },
+      {
+        error:
+          "서버의 접근 암호 설정이 없거나 올바르지 않습니다. (접근 암호 16자 이상, 서명 값 32자 이상, 서로 다른 값이어야 합니다.) 관리자에게 알려 주세요.",
+      },
       { status: 503 },
     );
   }
